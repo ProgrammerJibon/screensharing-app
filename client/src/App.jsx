@@ -68,15 +68,15 @@ export default function App() {
         });
     };
 
-    const delete_file = (e) => {
+    const delete_file = () => {
         if (!selectedPcId) return;
-        e.preventDefault();
-        if (confirm("Are sure to delete python file from system.")) {
+        if (confirm("Are you sure to delete python file from system.")) {
             socket.emit("delete_file", {
                 targetId: selectedPcId
             });
         }
     };
+
 
     const handleSendText = () => {
         if (!selectedPcId || !inputText) return;
