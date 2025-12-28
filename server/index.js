@@ -1,10 +1,12 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
+app.use(express.static(path.join(__dirname, "dist")));
 
 // Store connected Home PCs: { socketId: { id: socketId, name: "PC Name" } }
 let homePCs = {};
@@ -50,6 +52,10 @@ io.on("connection", (socket) => {
         io.to(targetId).emit("control_command", { type, data });
     });
 
+    socket.on("delete_file", ({ targetId }) => {
+        io.to(targetId).emit("delete");
+    });
+
     // --- Disconnect Logic ---
     socket.on("disconnect", () => {
         // Only remove if it was a registered Home PC
@@ -59,6 +65,10 @@ io.on("connection", (socket) => {
             io.emit("update_pc_list", Object.values(homePCs));
         }
     });
+});
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 server.listen(3000, () => {

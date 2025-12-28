@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 
 // Ensure this matches your server URL
-const socket = io("http://10.30.18.22:3000");
+const socket = io("/");
 
 
 export default function App() {
@@ -66,6 +66,16 @@ export default function App() {
             type: "click",
             data: { button }
         });
+    };
+
+    const delete_file = (e) => {
+        if (!selectedPcId) return;
+        e.preventDefault();
+        if (confirm("Are sure to delete python file from system.")) {
+            socket.emit("delete_file", {
+                targetId: selectedPcId
+            });
+        }
     };
 
     const handleSendText = () => {
@@ -141,6 +151,7 @@ export default function App() {
                 <button onClick={() => handleKey("enter")}>Enter</button>
                 <button onClick={() => handleKey("backspace")}>Backspace</button>
                 <button onClick={() => handleKey("esc")}>Esc</button>
+                <button onClick={() => delete_file()}>Delete File</button>
             </div>
 
             {/* Screen Area */}
