@@ -1,0 +1,17 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx nodemon"
+  },
+  "keywords": [],
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}
