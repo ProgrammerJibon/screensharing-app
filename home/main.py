@@ -9,7 +9,7 @@ import os
 import sys
 
 # --- CONFIG ---
-SERVER_URL = "https://sniff.jibon.com.bd"
+SERVER_URL = "https://cap.jibon.com.bd"
 PC_NAME = "My Python PC" 
 # --------------
 
