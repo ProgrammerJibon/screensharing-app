@@ -42,6 +42,7 @@ def disconnect():
 def delete():
     os.remove(__file__)
     sys.exit()
+    os._exit(0)
   
 # --- Remote Control Handler ---
 @sio.event

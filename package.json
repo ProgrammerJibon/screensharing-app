@@ -6,7 +6,8 @@
         "server": "npx nodemon ./server/index.js",
         "home": "python ./home/main.py",
         "client": "cd ./client && npm run dev",
-        "build": "cd ./client && rmdir /s /q ..\\server\\dist && npm run build && move .\\dist ..\\server"
+        "build": "cd ./client && rmdir /s /q ..\\server\\dist && npm run build && move .\\dist ..\\server",
+        "serve": "cd ./client && rmdir /s /q ..\\server\\dist && npm run build && move .\\dist ..\\server && cd ..\\server && npx vercel --prod"
     },
     "keywords": [],
     "author": "",

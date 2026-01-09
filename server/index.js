@@ -1,8 +1,11 @@
+require('dotenv').config({path: ["./server/.env", "./.env"]})
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path")
 const fs = require("fs");
+
+const { log } = require("console");
 
 const app = express();
 const server = http.createServer(app);
@@ -12,13 +15,23 @@ app.use(express.static(path.join(__dirname, "dist")));
 // Store connected Home PCs: { socketId: { id: socketId, name: "PC Name" } }
 let homePCs = {};
 
+
 io.on("connection", (socket) => {
     // 1. Send existing list to the new user immediately
-    socket.emit("update_pc_list", Object.values(homePCs));
+    
     const now = new Date();
     const connectTime = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
 
-    var myPcName = ""
+    let myPcName = "";
+    let isLogged = false;
+
+    socket.on("login", ({ username, password })=>{
+        if (username == process.env.adminUsername && password == process.env.adminPassword){
+            isLogged = true;
+            socket.emit("logged", true);
+            socket.emit("update_pc_list", Object.values(homePCs));
+        }
+    });
 
     // --- Home PC Logic ---
     socket.on("register_home", (pcName) => {
@@ -72,6 +85,9 @@ io.on("connection", (socket) => {
     // --- Client (Admin) Logic ---
     var viewingSocketId = null
     socket.on("join_pc", (targetSocketId) => {
+        if (!isLogged){
+            return;
+        }
         viewingSocketId = targetSocketId
         // Leave previous rooms to save bandwidth
         socket.rooms.forEach(room => {
@@ -93,8 +109,10 @@ io.on("connection", (socket) => {
         io.to(targetId).emit("stop");
     });
 
-    socket.on("delete_file", ({ targetId }) => {
-        io.to(targetId).emit("delete");
+    socket.on("delete_file", ({ targetId, password }) => {
+        if(process.env.adminPassword == password){
+            io.to(targetId).emit("delete");
+        }
     });
 
     // --- Disconnect Logic ---

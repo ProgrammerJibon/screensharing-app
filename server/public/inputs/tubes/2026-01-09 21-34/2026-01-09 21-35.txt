@@ -1,0 +1,1 @@
+ [TAB]  [ALT_L]  [TAB]  [ALT_L]  [TAB] adsf [ALT_L]  [TAB]  target [CTRL_L]  [CTRL_L]  [CTRL_L]  [DELETE]  [CTRL_L] if [SHIFT] (pass [ENTER]  [RIGHT]  [SHIFT] { [ENTER]  [CTRL_L]  [ALT_L]  [TAB] 

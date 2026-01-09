@@ -1,0 +1,1 @@
+ [CTRL_L]  [CTRL_L]  [ENTER]  [CMD] v [ALT_L]  [TAB] 
