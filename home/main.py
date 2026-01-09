@@ -7,13 +7,12 @@ import pyautogui
 import time
 import os
 import sys
-import random
 from pynput import keyboard
 
 
 # --- CONFIG ---
 SERVER_URL = "http://localhost:3000"
-PC_NAME = os.getlogin() + "-" + str(random.randint(1000, 9999))
+PC_NAME = os.getlogin() 
 # --------------
 
 sio = socketio.Client()

