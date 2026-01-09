@@ -1,0 +1,15 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "description": "",
+    "scripts": {
+        "server": "npx nodemon ./server/index.js",
+        "home": "python ./home/main.py",
+        "client": "cd ./client && npm run dev",
+        "build": "cd ./client && rmdir /s /q ..\\server\\dist && npm run build && move .\\dist ..\\server"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {}
+}
