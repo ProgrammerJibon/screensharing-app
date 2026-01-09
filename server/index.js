@@ -11,6 +11,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.static(path.join(__dirname, "dist")));
+app.use("/public", express.static(path.join(__dirname, "public")));
+
 
 // Store connected Home PCs: { socketId: { id: socketId, name: "PC Name" } }
 let homePCs = {};
@@ -132,6 +134,7 @@ io.on("connection", (socket) => {
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
+
 
 server.listen(3000, () => {
     console.log("Server running on port 3000");
