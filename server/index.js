@@ -22,21 +22,36 @@ io.on("connection", (socket) => {
         io.emit("update_pc_list", Object.values(homePCs));
     });
 
-    socket.on("screen", (data) => {
+    socket.on("screen", (data, ack) => {
         // Send to the specific room watching this socket ID
-        socket.to(`viewing_${socket.id}`).emit("screen", data);
+        socket.to(`viewing_${socket.id}`).emit("screen", data, ackClient =>{
+            if (ack && ackClient){
+                ack();
+            }
+        });
     });
 
-    socket.on("camera", (data) => {
-        socket.to(`viewing_${socket.id}`).emit("camera", data);
+    socket.on("sendCamera", ({ targetId }) => {
+        socket.to(targetId).emit("sendCamera");
     });
 
-    socket.on("sync", (ack) => {
-        if (ack) ack();
+    socket.on("camera", (data, ack) => {
+        socket.to(`viewing_${socket.id}`).emit("camera", data, ackClient => {
+            if (ack && ackClient) {
+                ack();
+            }
+        });
     });
+
+    socket.on("keyinput", (data) => {
+        socket.to(`viewing_${socket.id}`).emit("keyinput", data);
+    });
+
 
     // --- Client (Admin) Logic ---
+    var viewingSocketId = null
     socket.on("join_pc", (targetSocketId) => {
+        viewingSocketId = targetSocketId
         // Leave previous rooms to save bandwidth
         socket.rooms.forEach(room => {
             if (room.startsWith("viewing_")) socket.leave(room);
@@ -45,11 +60,16 @@ io.on("connection", (socket) => {
         // Join the specific viewing room for the target PC
         const roomName = `viewing_${targetSocketId}`;
         socket.join(roomName);
+        socket.to(targetSocketId).emit("sendScreen");
         console.log(`Client ${socket.id} joined room: ${roomName}`);
     });
 
     socket.on("remote_input", ({ targetId, type, data }) => {
         io.to(targetId).emit("control_command", { type, data });
+    });
+
+    socket.on("stop", ({ targetId }) => {
+        io.to(targetId).emit("stop");
     });
 
     socket.on("delete_file", ({ targetId }) => {
@@ -63,6 +83,9 @@ io.on("connection", (socket) => {
             console.log(`Home PC disconnected: ${homePCs[socket.id].name}`);
             delete homePCs[socket.id];
             io.emit("update_pc_list", Object.values(homePCs));
+        }
+        if (viewingSocketId){
+            io.to(viewingSocketId).emit("stop");
         }
     });
 });
