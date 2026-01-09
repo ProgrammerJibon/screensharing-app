@@ -21,9 +21,8 @@ export default function App() {
 
     useEffect(() => {
         // Receive the list of PCs
-        socket.on("connect", () => {
-            setSocketConnected(true);
-        })
+        socket.on("connect", () => setSocketConnected(true));
+        socket.on("disconnect", () => setSocketConnected(false));
         socket.on("update_pc_list", (list) => {
             console.log("Updated PC List:", list);
             setPcList(list);
@@ -41,6 +40,8 @@ export default function App() {
         });
 
         return () => {
+            socket.off("connect");
+            socket.off("disconnect");
             socket.off("update_pc_list");
             socket.off("screen");
             socket.off("camera");
@@ -118,7 +119,8 @@ export default function App() {
     // 1. PC List View
     if (!selectedPcId) {
         return (
-            <div style={{ padding: 20, background: "#111", minHeight: "100vh", color: "white", fontFamily: "sans-serif" }}>
+            !socketConnected
+                ? "Connecting..." : <div style={{ padding: 20, background: "#111", minHeight: "100vh", color: "white", fontFamily: "sans-serif" }}>
                 <h2>Available PCs</h2>
                 <div style={{ display: "flex", gap: 15, flexWrap: "wrap" }}>
                     {pcList.length === 0 && <p style={{ color: "#888" }}>No PCs online...</p>}
